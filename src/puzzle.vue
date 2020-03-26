@@ -1,7 +1,15 @@
 <template lang="">
   <div class="puzzle">
+    <!-- <button type="button" name="button" @click="start">restart</button> -->
     <div class="puzzle-content">
-    <div class="item" :class="'item-' + index" :id="index === 8 ? 'white' : ''" v-for="(item, index) in 9" :key="index" :style="'background-image:url(' + require('./img/bg.png') + ')'" @click="handle"></div>
+      <div class="item"
+      :class="'item-' + index"
+      :id="index === white ? 'white' : ''"
+      ref="item"
+      v-for="(item, index) in 9"
+      :key="index"
+      :style="{backgroundImage: 'url(' + (bg ? require(bg) : require('./img/bg.png')) + ')', opacity: (index === white ? '0' : '1')}"
+      @click="handle"></div>
     </div>
   </div>
 </template>
@@ -10,11 +18,15 @@ export default {
   props: {
     bg: {
       type: String,
-      default: './img/bg.png'
+      default: ''
     },
     white: {
       type: Number,
       default: 8
+    },
+    width: {
+      type: String,
+      default: '200px'
     }
   },
   data () {
@@ -30,25 +42,35 @@ export default {
         {left: '200px', top: '400px'},
         {left: '400px', top: '400px'}
       ],
-      sor: []
+      sor: [],
+      imgUrl: this.bg,
+      finished: false,
+      timer: null
     }
   },
   mounted() {
-    this.sor = this.pos.concat()
-    this.sor.sort(() => {
-      return Math.random() - 0.5
-    })
-    //获取所有拼图标签
-    let game = document.querySelectorAll('.item')
-    console.log(game)
-    for (let i = 0; i < game.length; i++) {
-      game[i].style.left = this.sor[i].left
-      game[i].style.top = this.sor[i].top
-    }
+    this.timer = setTimeout (() => {
+      this.start()
+    }, 1000)
   },
   methods: {
+    start () {
+      this.sor = this.pos.concat()
+      this.sor.sort(() => {
+        return Math.random() - 0.5
+      })
+      //获取所有拼图标签
+      // let game = document.querySelectorAll('.item')
+      let game = this.$refs.item
+      console.log(game)
+      for (let i = 0; i < game.length; i++) {
+        game[i].style.left = this.sor[i].left
+        game[i].style.top = this.sor[i].top
+      }
+    },
     handle (e) {
-      let game = document.querySelectorAll('.item')
+      if (this.finished) return false
+      let game = this.$refs.item
       let lucency = document.querySelector('#white')
       //拿到空白位置的left值
       let pleft = lucency.offsetLeft
@@ -58,22 +80,24 @@ export default {
       let gleft = e.target.offsetLeft
       //获取点击方块的top
       let gtop = e.target.offsetTop
-      if(gleft - pleft <= 200 && gleft - pleft > 0 && gtop === ptop || pleft - gleft <= 200 && pleft - gleft >0 && gtop === ptop) {
+      if (gleft - pleft <= 200 && gleft - pleft > 0 && gtop === ptop || pleft - gleft <= 200 && pleft - gleft > 0 && gtop === ptop) {
         e.target.style.left = pleft + 'px'
         lucency.style.left = gleft + 'px'
-      }else if(gtop - ptop <= 200 && gtop - ptop >0 && gleft === pleft || ptop - gtop <= 200 && ptop-gtop > 0 && gleft === pleft) {
+      } else if (gtop - ptop <= 200 && gtop - ptop > 0 && gleft === pleft || ptop - gtop <= 200 && ptop-gtop > 0 && gleft === pleft) {
         e.target.style.top = ptop + 'px'
         lucency.style.top = gtop + 'px'
       }
       let a = []
       for (let j = 0; j < this.pos.length; j++) {
         if(this.pos[j].left === game[j].style.left && this.pos[j].top === game[j].style.top){
-        a.push(j)
-        if(a.length == this.pos.length){
-          console.log('完成')
-          this.$emit('finish')
+          a.push(j)
+          if(a.length == this.pos.length){
+            console.log('完成')
+            document.querySelector('#white').style.opacity = 1
+            this.finished = true
+            this.$emit('finish')
+          }
         }
-      }
       }
     }
   }
@@ -89,7 +113,6 @@ export default {
   margin: auto;
   width: 600px;
   height: 600px;
-  border: 2px solid skyblue;
   padding: 1px;
 }
 .puzzle .puzzle-content{
@@ -151,7 +174,6 @@ export default {
 .item-8{
   left: 400px;
   top: 400px;
-  opacity: 0;
   background-position: -400px -400px;
 }
 </style>
